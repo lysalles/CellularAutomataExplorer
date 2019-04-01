@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include "printTitle.h"
 #include "optionManager.h"
@@ -12,8 +13,10 @@ int main(void)
 	{
 		// Menu
 		listOptions();
+		printf("Option: ");
 		option = readOption();
 		interpretOption(option);
+		putchar('\n');
 
 	} while (1);
 
