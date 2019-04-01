@@ -21,9 +21,9 @@ void listOptions(void)
 {
 	puts("Please enter one of the options below.");
 	puts("Simulation:");
-	puts("\t[N]ew matrix\n\t[S]tart simulation\n\t[Q]uit");
+	puts("\t[N]ew matrix | [S]tart simulation | [Q]uit");
 	puts("Settings:");
-	puts("\t[A]nalyse Matrix:");
+	puts("\t[A]nalyse Matrix");
 	//printf("\tPrinting "); analysis_printActiveFeatures(); printf(" every n cycles and m steps.\n");
 	puts("\t[R]ender Scatter Chart");
 	//puts("\tActive charts:"); chart_printActiveCharts();
