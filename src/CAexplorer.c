@@ -1,19 +1,21 @@
+#include <stdlib.h>
 #include "printTitle.h"
-#include "CA/ICA.h"
+#include "optionManager.h"
 
 int main(void)
 {
+	char option;
+
 	printTitle();
-/*
-	ICA_getArguments();
-	
-	while(ICA_argumentListNotEmpty())
+
+	do
 	{
-		ICA_runSimulation();
-		ICA_getStatus();
-		ICA_printStatus();
-		ICA_writeStatus();
-	}
-*/
-	return 0;
+		// Menu
+		listOptions();
+		option = readOption();
+		interpretOption(option);
+
+	} while (1);
+
+	return EXIT_FAILURE;
 }
