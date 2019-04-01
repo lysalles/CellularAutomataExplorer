@@ -1,14 +1,17 @@
 #include "printTitle.h"
 #include <stdio.h>
 
-void printSeparator(int n)
+#define PUBLIC // Empty
+#define PRIVATE static
+
+PRIVATE void printSeparator(int n)
 {
 	for (int i = 0; i < n; ++i)
 		putchar('~');
 	putchar('\n');
 }
 
-void printTitle(void)
+PUBLIC void printTitle(void)
 {
 	puts(TITLE);
 	puts("Written by " AUTHOR);
