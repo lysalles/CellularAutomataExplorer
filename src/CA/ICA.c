@@ -1,146 +1,89 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <time.h>
 
-#include "ICA.h"
-#include "../macroTools.h"
-
-#define MAX_LINES 100
-#define MAX_COLUMNS 100
-#define Q_PRECISION 10000
-
-struct ICA_cell 
+typedef struct
 {
-	int8_t state;
+	int state;
 	float threshold;
-};
+} cell;
 
-struct
+struct 
 {
-	struct ICA_cell *matrix;
-	long lines;
-	long columns;
-} ICA = { NULL, 0, 0 };
+	cell *matrix;
+	int L;
+	float q;
+	float avgState;
+	float avgThres;
+} ICA = {0};
 
-/*
-ICA_neighborSum:
-Returns the sum of the cells above, below, and besides the cell at the given coordinate.
-If no cell is present on any of those positions, 0 is summed.
-*/
-int8_t ICA_neighborSum(long line, long column);
-
-/*
-ICA_getCell:
-Returns the address of the cell at the given coordinates.
-*/
-struct ICA_cell *ICA_getCell(long line, long column);
-
-/*
-ICA_set_state:
-Sets the state of the cell at the given coordinates with the given state.
-*/
-void ICA_set_state(long line, long column, int8_t state);
-
-/*
-ICA_set_threshold:
-Sets the threshold of the cell at the given coordinates with the given state.
-*/
-void ICA_set_threshold(long line, long column, int8_t state);
-
-void ICA_new(long lines, long columns)
+void ICA_new(int L)
 {
-	if (lines > MAX_LINES)
-	{
-		puts("Failed to create new " ICA_TITLE ": lines over limit (" STRINGFY_VALUE(MAX_LINES) ")");
-	}
-	else if (columns > MAX_COLUMNS)
-	{
-		puts("Failed to create new " ICA_TITLE ": columns over limit (" STRINGFY_VALUE(MAX_COLUMNS) ")");
-	}
-	else
-	{
-		ICA_delete();
-		
-		ICA.lines = lines;
-		ICA.columns = columns;
-		ICA.matrix = malloc(sizeof(struct ICA_cell) * lines * columns);
-	}
+	srand((unsigned int) time(NULL));
+	free(ICA.matrix);
+	ICA.matrix = calloc((L + 2) * (L + 2), sizeof(cell));
 }
 
 void ICA_delete(void)
 {
-	if (ICA.matrix != NULL) // Limpa memoria se já houver um ICA
-	{
-		
-	}
+	free(ICA.matrix);
 }
 
-void ICA_run(int64_t cycles, int64_t steps, float q)
+int ICA_neighborSum(int x, int y)
 {
-	int line, column;
-	struct ICA_cell *cell;
-	float delta_q;
+	int sum;
 
-	for(; cycles; --cycles)
+	sum += (ICA.matrix + (y - 1) * ICA.L + (x))->state;
+	sum += (ICA.matrix + (y + 1) * ICA.L + (x))->state;
+	sum += (ICA.matrix + (y) * ICA.L + (x - 1))->state;
+	sum += (ICA.matrix + (y) * ICA.L + (x + 1))->state;
+
+	return sum;
+}
+
+void ICA_run(int32_t cycles, int32_t steps)
+{
+	int x, y;
+	float deltaQ;
+
+	while (cycles > 0  || steps > 0)
 	{
-		for(; steps; --steps)
+		for (;steps > 0; --steps)
 		{
-			line = rand() % ICA.lines;
-			column = rand() % ICA.columns;
+			x = rand() % ICA.L + 1;
+			y = rand() % ICA.L + 1;
+			deltaQ = rand() % 10000 / 10000.0f * ICA.q;
 
-			cell = ICA_getCell(line, column);
+			cell *c = (ICA.matrix + y * ICA.L + x);
 
-			delta_q = q * (rand() % Q_PRECISION) / Q_PRECISION;
-
-			if (ICA_neighborSum(line, column) > cell->threshold)
+			if (ICA_neighborSum(x, y) > c->threshold)
 			{
-				cell->state = 1;
-				cell->threshold += delta_q;
+				c->state = 1;
+				c->threshold += deltaQ;
 			}
 			else
 			{
-				cell->state = -1;
-				cell->threshold -= delta_q;
+				c->state = -1;
+				c->threshold -= deltaQ;
 			}
 		}
+		steps = cycles > 0 ? (--cycles, ICA.L * ICA.L) : 0;
 	}
 }
 
-unsigned int ICA_start(void)
+void ICA_updateStats(void)
 {
-	unsigned int seed = (unsigned int) time(NULL);
-	srand(seed);
+	int positiveCells = 0;
+	double totalThreshold = 0.0;
 
-	for (int32_t line = 0; line < ICA.lines; ++line)
+	cell *lastElement = ICA.matrix + (ICA.L + 2) * (ICA.L + 1);
+
+	for (register cell *i = ICA.matrix; i < lastElement; ++i)
 	{
-		for (int32_t column = 0; column < ICA.columns; ++column)
-		{
-			int8_t state = (rand() % 2) * 2 - 1; // +1 or -1
-			ICA_set_state(line, column, state);
-			ICA_set_threshold(line, column, 0);
-		}
+		positiveCells += i->state == 1;
+		totalThreshold += i->threshold;
 	}
-
-	return seed;	
-}
-
-
-int8_t ICA_neighborSum(long line, long column)
-{
-	return 0;
-}
-
-struct ICA_cell *ICA_getCell(long line, long column)
-{
-	return NULL;
-}
-
-void ICA_set_state(long line, long column, int8_t state)
-{
-	return;
-}
-
-void ICA_set_threshold(long line, long column, int8_t state)
-{
-	return;
+		
+	ICA.avgState = (2.0 * positiveCells) / (ICA.L * ICA.L) - 1.0;
+	ICA.avgThres = totalThreshold / (ICA.L * ICA.L);
 }
