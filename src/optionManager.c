@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "optionManager.h"
+#include "CAmanager.h"
 
 char readOption(void)
 {
@@ -40,9 +41,11 @@ void interpretOption(char option)
 	switch(option)
 	{
 		case 'N':
+		newMatrix();
 		break;
 
 		case 'S':
+		startSimulation();
 		break;
 
 		case 'A':
