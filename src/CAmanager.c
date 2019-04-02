@@ -1,4 +1,7 @@
+#include <stdio.h>
+#include <stdint.h>
 #include "CAmanager.h"
+#include "CA/ICA.h"
 
 typedef enum matrix_t {ICA} matrix_t;
 
@@ -26,10 +29,31 @@ struct matrix
 
 void newMatrix(void)
 {
-
+	int L;
+	float q;
+	printf("Creating new %s.\n", ICA_TITLE);
+	printf("Enter the value for L: L=");
+	scanf(" %d", &L);
+	while(getchar() != '\n');
+	printf("Enter the value for q: q=");
+	scanf(" %f", &q);
+	while(getchar() != '\n');
+	ICA_new(L, q);
 }
 
 void startSimulation(void)
 {
+	int cycles;
+	printf("Starting simulation for %s.\n", ICA_TITLE);
+	printf("Enter number of cycles: ");
+	scanf(" %d", &cycles);
+	while(getchar() != '\n');
 
+	for (int i = 0; i < cycles; ++i)
+	{
+		ICA_run(1,0);
+		ICA_updateStats();
+		printf("%-6s %-9s %-9s\n", "Cycle", "AvgState", "AvgThres");
+		printf("%-6d %-9.3g %-9.3g\n", i, (double) ICA_getAvgState(), (double) ICA_getAvgThres());
+	}
 }
