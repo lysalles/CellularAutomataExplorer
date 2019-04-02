@@ -1,6 +1,8 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <time.h>
+#include "ICA.h"
 
 typedef struct
 {
@@ -8,20 +10,71 @@ typedef struct
 	float threshold;
 } cell;
 
-struct 
+struct ICA
 {
 	cell *matrix;
 	int L;
 	float q;
 	float avgState;
 	float avgThres;
-} ICA = {0};
+	unsigned int seed;
+} ICA = {NULL};
 
-void ICA_new(int L)
+float ICA_getL(void)
 {
-	srand((unsigned int) time(NULL));
+	return ICA.L;
+}
+
+float ICA_getQ(void)
+{
+	return ICA.q;
+}
+
+float ICA_getAvgState(void)
+{
+	return ICA.avgState;
+}
+
+float ICA_getAvgThres(void)
+{
+	return ICA.avgThres;
+}
+
+unsigned int ICA_getSeed(void)
+{
+	return ICA.seed;
+}
+
+void ICA_new(int L, float q)
+{
+
+	cell *newMatrix;
+	unsigned int newSeed;
+
 	free(ICA.matrix);
-	ICA.matrix = calloc((L + 2) * (L + 2), sizeof(cell));
+	newMatrix = (cell *) calloc((L + 2) * (L + 2), sizeof(cell));
+
+	if (newMatrix == NULL)
+	{
+		printf("Failed to create new %s with L=%d and q=%g\n", ICA_TITLE, L, q);
+		while(getchar() != '\n');
+	}
+
+	newSeed = (unsigned int) time(NULL);
+	srand(newSeed);
+
+	for (int row = 1; row < L + 1; ++row)
+		for (int register col = 1; col < L + 1; ++col)
+		{ // SEGMENTATION FAULT
+			printf("row=%d col=%d\n",row,col);
+			(ICA.matrix + row * (L + 2) + col)->state = rand() % 2 * 2 - 1;
+			(ICA.matrix + row * (L + 2) + col)->threshold = (rand() % 10000 / 10000.0 * 2 - 1.0) * q;
+		}
+
+	
+	puts("Entrou aqui");
+
+	ICA = (struct ICA) {newMatrix, L, q, 0, 0, newSeed};
 }
 
 void ICA_delete(void)
