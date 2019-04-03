@@ -65,14 +65,10 @@ void ICA_new(int L, float q)
 
 	for (int row = 1; row < L + 1; ++row)
 		for (int register col = 1; col < L + 1; ++col)
-		{ // SEGMENTATION FAULT
-			printf("row=%d col=%d\n",row,col);
-			(ICA.matrix + row * (L + 2) + col)->state = rand() % 2 * 2 - 1;
-			(ICA.matrix + row * (L + 2) + col)->threshold = (rand() % 10000 / 10000.0 * 2 - 1.0) * q;
+		{ 
+			(newMatrix + row * (L + 2) + col)->state = rand() % 2 * 2 - 1;
+			(newMatrix + row * (L + 2) + col)->threshold = (rand() % 10000 / 10000.0 * 2 - 1.0) * q;
 		}
-
-	
-	puts("Entrou aqui");
 
 	ICA = (struct ICA) {newMatrix, L, q, 0, 0, newSeed};
 }
