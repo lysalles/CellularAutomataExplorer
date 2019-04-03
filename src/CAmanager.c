@@ -49,11 +49,12 @@ void startSimulation(void)
 	scanf(" %d", &cycles);
 	while(getchar() != '\n');
 
-	for (int i = 0; i < cycles; ++i)
+	printf("%6s %9s %9s\n", "Cycle", "AvgState", "AvgThres");
+
+	for (int i = 0; i <= cycles; ++i)
 	{
 		ICA_run(1,0);
 		ICA_updateStats();
-		printf("%-6s %-9s %-9s\n", "Cycle", "AvgState", "AvgThres");
-		printf("%-6d %-9.3g %-9.3g\n", i, (double) ICA_getAvgState(), (double) ICA_getAvgThres());
+		printf("%6d %9.4f %9.4f\n", i, ICA_getAvgState(), ICA_getAvgThres());
 	}
 }
