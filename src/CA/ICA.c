@@ -80,7 +80,7 @@ void ICA_delete(void)
 
 int ICA_neighborSum(int x, int y)
 {
-	int sum;
+	int sum = 0;
 
 	sum += (ICA.matrix + (y - 1) * ICA.L + (x))->state;
 	sum += (ICA.matrix + (y + 1) * ICA.L + (x))->state;
@@ -122,17 +122,17 @@ void ICA_run(int32_t cycles, int32_t steps)
 
 void ICA_updateStats(void)
 {
-	int positiveCells = 0;
+	double totalState = 0;
 	double totalThreshold = 0.0;
 
 	cell *lastElement = ICA.matrix + (ICA.L + 2) * (ICA.L + 1);
 
 	for (register cell *i = ICA.matrix; i < lastElement; ++i)
 	{
-		positiveCells += i->state == 1;
+		totalState += i->state;
 		totalThreshold += i->threshold;
 	}
 		
-	ICA.avgState = (2.0 * positiveCells) / (ICA.L * ICA.L) - 1.0;
+	ICA.avgState = totalState / (ICA.L * ICA.L);
 	ICA.avgThres = totalThreshold / (ICA.L * ICA.L);
 }
