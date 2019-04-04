@@ -11,9 +11,9 @@ float ICA_getQ(void);
 float ICA_getAvgState(void);
 float ICA_getAvgThres(void);
 unsigned int ICA_getSeed(void);
+int ICA_getNumberOfClusters(void);
 void ICA_new(int L, float q);
 void ICA_delete(void);
-int ICA_neighborSum(int x, int y);
 void ICA_run(int32_t cycles, int32_t steps);
 void ICA_updateStats(void);
 
