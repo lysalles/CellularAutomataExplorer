@@ -21,54 +21,26 @@ struct ICA
 	int numberOfClusters;
 } ICA = {NULL};
 
-float ICA_getL(void);
-float ICA_getQ(void);
-float ICA_getAvgState(void);
-float ICA_getAvgThres(void);
-unsigned int ICA_getSeed(void);
-int ICA_getNumberOfClusters(void);
-void ICA_new(int L, float q);
-void ICA_delete(void);
+// STATIC FUNCTIONS DECLARATIONS
+
 static int ICA_neighborSum(int x, int y);
-void ICA_run(int32_t cycles, int32_t steps);
-void ICA_updateStats(void);
 static int countClusters(void);
 
-float ICA_getL(void)
-{
-	return ICA.L;
-}
+// VALUE RETURNING FUNCTIONS
 
-float ICA_getQ(void)
-{
-	return ICA.q;
-}
+float ICA_getL(void){return ICA.L;}
+float ICA_getQ(void){return ICA.q;}
+float ICA_getAvgState(void){return ICA.avgState;}
+float ICA_getAvgThres(void){return ICA.avgThres;}
+unsigned int ICA_getSeed(void){return ICA.seed;}
+int ICA_getNumberOfClusters(void){return ICA.numberOfClusters;}
 
-float ICA_getAvgState(void)
-{
-	return ICA.avgState;
-}
-
-float ICA_getAvgThres(void)
-{
-	return ICA.avgThres;
-}
-
-unsigned int ICA_getSeed(void)
-{
-	return ICA.seed;
-}
-
-int ICA_getNumberOfClusters(void)
-{
-	return ICA.numberOfClusters;
-}
+// MAIN FUNCTIONS
 
 void ICA_new(int L, float q)
 {
-
 	cell *newMatrix;
-	unsigned int newSeed;
+	unsigned int newSeed = 0;
 
 	free(ICA.matrix);
 	newMatrix = (cell *) calloc((L + 2) * (L + 2), sizeof(cell));
@@ -78,35 +50,32 @@ void ICA_new(int L, float q)
 		printf("Failed to create new %s with L=%d and q=%g\n", ICA_TITLE, L, q);
 		while(getchar() != '\n');
 	}
+	else
+	{
+		newSeed = (unsigned int) time(NULL);
+		srand(newSeed);
 
-	newSeed = (unsigned int) time(NULL);
-	srand(newSeed);
-
-	for (int row = 1; row < L + 1; ++row)
-		for (int register col = 1; col < L + 1; ++col)
-		{ 
-			(newMatrix + row * (L + 2) + col)->state = rand() % 2 * 2 - 1;
-			(newMatrix + row * (L + 2) + col)->threshold = (rand() % 10000 / 10000.0 * 2 - 1.0) * q;
-		}
-
-	ICA = (struct ICA) {newMatrix, L, q, 0, 0, newSeed};
+		for (int row = 1; row < L + 1; ++row)
+			for (int register col = 1; col < L + 1; ++col)
+			{ 
+				(newMatrix + row * (L + 2) + col)->state = rand() % 2 * 2 - 1;
+				(newMatrix + row * (L + 2) + col)->threshold = (rand() % 10000 / 10000.0 * 2 - 1.0) * q;
+			}
+	}
+	
+	ICA.matrix = newMatrix;
+	ICA.L = L;
+	ICA.q = q;
+	ICA.avgState = 0;
+	ICA.avgThres = 0;
+	ICA.numberOfClusters = 0;
+	ICA.seed = newSeed;
 }
 
 void ICA_delete(void)
 {
 	free(ICA.matrix);
-}
-
-static int ICA_neighborSum(int x, int y)
-{
-	int sum = 0;
-
-	sum += (ICA.matrix + (y - 1) * ICA.L + (x))->state;
-	sum += (ICA.matrix + (y + 1) * ICA.L + (x))->state;
-	sum += (ICA.matrix + (y) * ICA.L + (x - 1))->state;
-	sum += (ICA.matrix + (y) * ICA.L + (x + 1))->state;
-
-	return sum;
+	ICA.matrix = NULL;
 }
 
 void ICA_run(int32_t cycles, int32_t steps)
@@ -135,9 +104,15 @@ void ICA_run(int32_t cycles, int32_t steps)
 				c->threshold -= deltaQ;
 			}
 		}
-		steps = cycles > 0 ? (--cycles, ICA.L * ICA.L) : 0;
+		if (cycles > 0 )
+		{
+			--cycles;
+			steps = ICA.L * ICA.L;
+		}
 	}
 }
+
+// INFORMATION RETRIEVAL FUNCTIONS
 
 void ICA_updateStats(void)
 {
@@ -157,19 +132,38 @@ void ICA_updateStats(void)
 	ICA.numberOfClusters = countClusters();
 }
 
-static int countClusters(void)
+static int ICA_neighborSum(int x, int y)
 {
+	int sum = 0;
+
+	sum += (ICA.matrix + (y - 1) * ICA.L + (x))->state;
+	sum += (ICA.matrix + (y + 1) * ICA.L + (x))->state;
+	sum += (ICA.matrix + (y) * ICA.L + (x - 1))->state;
+	sum += (ICA.matrix + (y) * ICA.L + (x + 1))->state;
+
+	return sum;
+}
+
+static int countClusters(void) // 2D
+{
+	// IMPLEMENTATION INDEPPENDENT
 	int numberOfClusters = 0;
-	int8_t * const cellCounted = calloc((ICA.L + 2) * (ICA.L + 2), sizeof(int8_t));
-	int row, col;
-	cell *N, *S, *E, *W, *C;
 	int newCluster;
+	int row, col;
+	int maxRows, maxCols;
 	
+	// IMPLEMENTATION DEPENDENT
+	cell *N, *S, *E, *W, *C;
+	int8_t * const cellCounted = calloc((ICA.L + 2) * (ICA.L + 2), sizeof(int8_t));
+	maxRows = ICA.L;
+	maxCols = ICA.L;
+	// queue
 	cell ** const queue = calloc(4 * ICA.L, sizeof(cell *));
 	int first = 0, last = 0, elements = 0;
 
-	for (row = 1; row <= ICA.L; ++row)
-		for (col = 1; col <= ICA.L; ++col)
+	// ALGORITHM
+	for (row = 1; row <= maxRows; ++row)
+		for (col = 1; col <= maxCols; ++col)
 		{
 			C = ICA.matrix + (ICA.L + 2) * row + col;
 
@@ -234,10 +228,11 @@ static int countClusters(void)
 
 			while (elements > 0)
 			{
-				C = *(queue + first);
+				C = *(queue + first); // dequeue
 				*(cellCounted + (C - ICA.matrix)) = 1;
 				first = first + 1 < 4 * ICA.L ? first + 1 : 0;
 				--elements;
+
 				N = C - (ICA.L + 2);
 				S = C + (ICA.L + 2);
 				E = C + 1;
