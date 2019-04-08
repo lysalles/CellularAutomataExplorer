@@ -28,6 +28,7 @@ struct ICA
 
 static int ICA_neighborSum(int x, int y);
 static int countClusters(void);
+void ICA_printMatrix(void);
 
 // VALUE RETURNING FUNCTIONS
 
@@ -45,6 +46,7 @@ void ICA_new(int L, float q)
 	cell *newMatrix;
 	unsigned int newSeed = 0;
 	float new_q;
+	cell *c;
 
 	free(ICA.matrix);
 	newMatrix = (cell *) calloc((L + 2) * (L + 2), sizeof(cell));
@@ -61,12 +63,13 @@ void ICA_new(int L, float q)
 		newSeed = (unsigned int) time(NULL);
 		srand(newSeed);
 
-		for (int row = 1; row < L + 1; ++row)
-			for (int register col = 1; col < L + 1; ++col)
+		for (int row = 1; row <= L; ++row)
+			for (register int col = 1; col <= L; ++col)
 			{ 
-				(newMatrix + row * (L + 2) + col)->state = rand() % 2 * 2 - 1;
+				c = (newMatrix + row * (L + 2) + col);
+				c->state = rand() % 2 * 2 - 1;
 				new_q = (rand() % DELTAQ_PRECISION * 2.0 / DELTAQ_PRECISION - 1.0) * q;
-				(newMatrix + row * (L + 2) + col)->threshold = new_q;
+				c->threshold = new_q;
 			}
 
 		puts("Successfully created.\n");
@@ -100,9 +103,10 @@ void ICA_run(int32_t cycles, int32_t steps)
 		{
 			x = rand() % ICA.L + 1;
 			y = rand() % ICA.L + 1;
+
 			deltaQ = rand() % DELTAQ_PRECISION * ICA.q / DELTAQ_PRECISION;
 
-			cell *c = (ICA.matrix + y * ICA.L + x);
+			cell *c = (ICA.matrix + y * (ICA.L + 2) + x);
 
 			if (ICA_neighborSum(x, y) > c->threshold)
 			{
@@ -125,6 +129,22 @@ void ICA_run(int32_t cycles, int32_t steps)
 
 // INFORMATION RETRIEVAL FUNCTIONS
 
+void ICA_printMatrix(void)
+{
+	putchar('\n');
+	for (int row = 0; row < ICA.L + 2; ++row)
+	{	
+		for (int col = 0; col < ICA.L + 2; ++col)
+		{
+			int state = (ICA.matrix + row * (ICA.L + 2) + col)->state;
+			putchar(state == 1 ? '+' : ' ');
+			putchar(' ');
+		}
+		
+		putchar('\n');
+	}		
+}
+
 void ICA_updateStats(void)
 {
 	double totalState = 0;
@@ -132,7 +152,7 @@ void ICA_updateStats(void)
 
 	cell *lastElement = ICA.matrix + (ICA.L + 2) * (ICA.L + 1);
 
-	for (register cell *i = ICA.matrix; i < lastElement; ++i)
+	for (cell *i = ICA.matrix; i < lastElement; ++i)
 	{
 		totalState += i->state;
 		totalThreshold += i->threshold;
@@ -192,41 +212,13 @@ static int countClusters(void) // 2D, closed borders
 
 			newCluster = false;
 
-			*(cellCounted + (C - matrix)) = true;
-
-			N = C - (L + 2);
-			S = C + (L + 2);
-			E = C + 1;
-			W = C - 1;
-
-			if (N->state == 1 && *(cellCounted + (N - matrix)) == false)
-			{
-				newCluster = true;
-				ENQUEUE(N);
-			} 
-			if (S->state == 1 && *(cellCounted + (S - matrix)) == false)
-			{
-				newCluster = true;
-				ENQUEUE(S);
-			} 
-			if (E->state == 1 && *(cellCounted + (E - matrix)) == false)
-			{
-				newCluster = true;
-				ENQUEUE(E);
-			} 
-			if (W->state == 1 && *(cellCounted + (W - matrix)) == false)
-			{
-				newCluster = true;
-				ENQUEUE(W);
-			} 
-			if (newCluster = 1)
-				++numberOfClusters;
+			ENQUEUE(C);
 
 			while (elements > 0)
 			{
 				C = DEQUEUE;
 
-				*(cellCounted + (C - matrix)) = 1;
+				*(cellCounted + (C - matrix)) = true;
 
 				N = C - (L + 2);
 				S = C + (L + 2);
@@ -254,6 +246,8 @@ static int countClusters(void) // 2D, closed borders
 					ENQUEUE(W);
 				} 
 			}
+
+			if (newCluster) ++numberOfClusters;
 		}
 		
 	free(queue);
@@ -261,3 +255,4 @@ static int countClusters(void) // 2D, closed borders
 
 	return numberOfClusters;
 }
+
