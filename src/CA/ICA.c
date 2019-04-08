@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include <time.h>
 #include "ICA.h"
+#include <stdbool.h>
+
+#define DELTAQ_PRECISION 100000
 
 typedef struct
 {
@@ -41,9 +44,12 @@ void ICA_new(int L, float q)
 {
 	cell *newMatrix;
 	unsigned int newSeed = 0;
+	float new_q;
 
 	free(ICA.matrix);
 	newMatrix = (cell *) calloc((L + 2) * (L + 2), sizeof(cell));
+
+	printf("Creating new %s matrix...\n", ICA_TITLE);
 
 	if (newMatrix == NULL)
 	{
@@ -59,8 +65,11 @@ void ICA_new(int L, float q)
 			for (int register col = 1; col < L + 1; ++col)
 			{ 
 				(newMatrix + row * (L + 2) + col)->state = rand() % 2 * 2 - 1;
-				(newMatrix + row * (L + 2) + col)->threshold = (rand() % 10000 / 10000.0 * 2 - 1.0) * q;
+				new_q = (rand() % DELTAQ_PRECISION * 2.0 / DELTAQ_PRECISION - 1.0) * q;
+				(newMatrix + row * (L + 2) + col)->threshold = new_q;
 			}
+
+		puts("Successfully created.\n");
 	}
 	
 	ICA.matrix = newMatrix;
@@ -74,6 +83,8 @@ void ICA_new(int L, float q)
 
 void ICA_delete(void)
 {
+	if (ICA.matrix != NULL)
+		puts("ICA matrix deleted.");
 	free(ICA.matrix);
 	ICA.matrix = NULL;
 }
@@ -89,7 +100,7 @@ void ICA_run(int32_t cycles, int32_t steps)
 		{
 			x = rand() % ICA.L + 1;
 			y = rand() % ICA.L + 1;
-			deltaQ = rand() % 10000 / 10000.0f * ICA.q;
+			deltaQ = rand() % DELTAQ_PRECISION * ICA.q / DELTAQ_PRECISION;
 
 			cell *c = (ICA.matrix + y * ICA.L + x);
 
@@ -144,135 +155,103 @@ static int ICA_neighborSum(int x, int y)
 	return sum;
 }
 
-static int countClusters(void) // 2D
+static int countClusters(void) // 2D, closed borders
 {
-	// IMPLEMENTATION INDEPPENDENT
+	// IMPLEMENTATION INDEPENDENT
 	int numberOfClusters = 0;
-	int newCluster;
+	bool newCluster;
 	int row, col;
 	int maxRows, maxCols;
+	int L;
 	
-	// IMPLEMENTATION DEPENDENT
-	cell *N, *S, *E, *W, *C;
-	int8_t * const cellCounted = calloc((ICA.L + 2) * (ICA.L + 2), sizeof(int8_t));
-	maxRows = ICA.L;
-	maxCols = ICA.L;
 	// queue
-	cell ** const queue = calloc(4 * ICA.L, sizeof(cell *));
+	int queueSize;
 	int first = 0, last = 0, elements = 0;
+	void **queue;
+	#define ENQUEUE(x) *(queue + last) = x; last = last + 1 < queueSize ? last + 1 : 0; ++elements
+	#define DEQUEUE *(queue + first); first = first + 1 < queueSize ? first + 1 : 0; --elements
+
+	// IMPLEMENTATION DEPENDENT
+	cell *matrix = ICA.matrix;
+	cell *N, *S, *E, *W, *C;
+	L = ICA.L;
+	maxRows = L;
+	maxCols = L;
+	bool * const cellCounted = calloc((maxRows + 2) * (maxCols + 2), sizeof(bool));
+	queueSize = 4 * L;
+	queue = calloc(queueSize, sizeof(cell *));
 
 	// ALGORITHM
 	for (row = 1; row <= maxRows; ++row)
 		for (col = 1; col <= maxCols; ++col)
 		{
-			C = ICA.matrix + (ICA.L + 2) * row + col;
+			C = matrix + (L + 2) * row + col;
 
-			if (C->state != 1)
+			if (C->state != 1 || *(cellCounted + (C - matrix)) == true)
 				continue;
 
-			if (*(cellCounted + (C - ICA.matrix)) == 1)
-				continue;
+			newCluster = false;
 
-			newCluster = 0;
+			*(cellCounted + (C - matrix)) = true;
 
-
-			*(cellCounted + (C - ICA.matrix)) = 1;
-
-			N = C - (ICA.L + 2);
-			S = C + (ICA.L + 2);
+			N = C - (L + 2);
+			S = C + (L + 2);
 			E = C + 1;
 			W = C - 1;
 
-			if (N->state == 1)
+			if (N->state == 1 && *(cellCounted + (N - matrix)) == false)
 			{
-				if (*(cellCounted + (N - ICA.matrix)) == 0)
-				{
-					newCluster = 1;
-					*(queue + last) = N; //enqueue
-					last = last + 1 < 4 * ICA.L ? last + 1 : 0;
-					++elements;
-				}
+				newCluster = true;
+				ENQUEUE(N);
 			} 
-			if (S->state == 1)
+			if (S->state == 1 && *(cellCounted + (S - matrix)) == false)
 			{
-				if (*(cellCounted + (S - ICA.matrix)) == 0)
-				{
-					newCluster = 1;
-					*(queue + last) = S; //enqueue
-					last = last + 1 < 4 * ICA.L ? last + 1 : 0;
-					++elements;
-				}
+				newCluster = true;
+				ENQUEUE(S);
 			} 
-			if (E->state == 1)
+			if (E->state == 1 && *(cellCounted + (E - matrix)) == false)
 			{
-				if (*(cellCounted + (E - ICA.matrix)) == 0)
-				{
-					newCluster = 1;
-					*(queue + last) = E; //enqueue
-					last = last + 1 < 4 * ICA.L ? last + 1 : 0;
-					++elements;
-				}
+				newCluster = true;
+				ENQUEUE(E);
 			} 
-			if (W->state == 1)
+			if (W->state == 1 && *(cellCounted + (W - matrix)) == false)
 			{
-				if (*(cellCounted + (W - ICA.matrix)) == 0)
-				{
-					newCluster = 1;
-					*(queue + last) = W; //enqueue
-					last = last + 1 < 4 * ICA.L ? last + 1 : 0;
-					++elements;
-				}
+				newCluster = true;
+				ENQUEUE(W);
 			} 
 			if (newCluster = 1)
 				++numberOfClusters;
 
 			while (elements > 0)
 			{
-				C = *(queue + first); // dequeue
-				*(cellCounted + (C - ICA.matrix)) = 1;
-				first = first + 1 < 4 * ICA.L ? first + 1 : 0;
-				--elements;
+				C = DEQUEUE;
 
-				N = C - (ICA.L + 2);
-				S = C + (ICA.L + 2);
+				*(cellCounted + (C - matrix)) = 1;
+
+				N = C - (L + 2);
+				S = C + (L + 2);
 				E = C + 1;
 				W = C - 1;
 
-				if (N->state == 1)
+				if (N->state == 1 && *(cellCounted + (N - matrix)) == false)
 				{
-					if (*(cellCounted + (N - ICA.matrix)) == 0)
-					{
-						*(queue + last) = N; //enqueue
-						last = last + 1 < 4 * ICA.L ? last + 1 : 0;
-						++elements;
-					}
+					newCluster = true;
+					ENQUEUE(N);
 				} 
-				if (S->state == 1)
+				if (S->state == 1 && *(cellCounted + (S - matrix)) == false)
 				{
-					if (*(cellCounted + (S - ICA.matrix)) == 0)
-					{
-						*(queue + last) = S; //enqueue
-						last = last + 1 < 4 * ICA.L ? last + 1 : 0;
-						++elements;
-					}
+					newCluster = true;
+					ENQUEUE(S);
 				} 
-				if (E->state == 1)
+				if (E->state == 1 && *(cellCounted + (E - matrix)) == false)
 				{
-					if (*(cellCounted + (E - ICA.matrix)) == 0)
-					{
-						*(queue + last) = E; //enqueue
-						last = last + 1 < 4 * ICA.L ? last + 1 : 0;
-						++elements;
-					}
+					newCluster = true;
+					ENQUEUE(E);
 				} 
-				if (W->state == 1)
+				if (W->state == 1 && *(cellCounted + (W - matrix)) == false)
 				{
-					if (*(cellCounted + (W - ICA.matrix)) == 0)
-					{
-						*(queue + last) = W; //enqueue
-						last = last + 1 < 4 * ICA.L ? last + 1 : 0;
-						++elements;
-					}
+					newCluster = true;
+					ENQUEUE(W);
 				} 
 			}
 		}
