@@ -51,10 +51,12 @@ void startSimulation(void)
 
 	printf("%6s %9s %9s %9s\n", "Cycle", "AvgState", "AvgThres", "Clusters");
 
-	for (int i = 0; i <= cycles; ++i)
+	for (int i = 0; i < cycles; ++i)
 	{
-		ICA_run(1,0);
 		ICA_updateStats();
 		printf("%6d %9.4f %9.4f %9d\n", i, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
+		ICA_run(1,0);
 	}
+	ICA_updateStats();
+	printf("%6d %9.4f %9.4f %9d\n", cycles, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
 }
