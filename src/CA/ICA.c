@@ -5,9 +5,18 @@
 #include "ICA.h"
 #include <stdbool.h>
 
+// CLUSTER.H BEGIN
+
+typedef struct matrix_t {void *m; int rows; int cols;} matrix_t;
+typedef struct neighbor_t {void *N, *S, *E, *W;} neighbor_t;
+
+int countClusters(const matrix_t *m);
+
+// CLUSTER.H END
+
 #define DELTAQ_PRECISION 100000
 
-typedef struct
+typedef struct cell
 {
 	int state;
 	float threshold;
@@ -27,7 +36,6 @@ struct ICA
 // STATIC FUNCTIONS DECLARATIONS
 
 static int ICA_neighborSum(int x, int y);
-static int countClusters(void);
 void ICA_printMatrix(void);
 
 // VALUE RETURNING FUNCTIONS
@@ -160,7 +168,9 @@ void ICA_updateStats(void)
 		
 	ICA.avgState = totalState / (ICA.L * ICA.L);
 	ICA.avgThres = totalThreshold / (ICA.L * ICA.L);
-	ICA.numberOfClusters = countClusters();
+	ICA.numberOfClusters = countClusters(&(matrix_t) {(void *)ICA.matrix, ICA.L, ICA.L});
+
+	ICA_printMatrix();
 }
 
 static int ICA_neighborSum(int x, int y)
@@ -175,39 +185,70 @@ static int ICA_neighborSum(int x, int y)
 	return sum;
 }
 
-static int countClusters(void) // 2D, closed borders
+// TOOLS FOR COUNTING CLUSTER
+
+static int ICA_getCellState(void *c)
+{
+	return ((cell *) c)->state;
+}
+
+
+static void *ICA_getCellByPos(int row, int col, const matrix_t *m)
+{
+	cell *M = m->m;
+	return (void *) (M + row * (m->rows + 2) + col);
+}
+
+static neighbor_t *ICA_getNeighbor(void *c, const matrix_t *m)
+{
+	static neighbor_t neighbor;
+	cell *C = c;
+	neighbor = (neighbor_t)
+	{
+		C - (m->cols + 2),
+		C + (m->cols + 2),
+		C + 1,
+		C - 1
+	};
+	return &neighbor;
+}
+
+int countClusters(const matrix_t *m) // 2D, closed borders
 {
 	// IMPLEMENTATION INDEPENDENT
+	int maxRows = m->rows, maxCols = m->cols;
+
+	int (*getCellState)(void *c);
+	void *(*getCell)(int row, int col, const matrix_t *m);
+	neighbor_t *(*getNeighbor)(void *c, const matrix_t *m);
+	
+	bool * const cellCounted = calloc((maxRows + 2) * (maxCols + 2), sizeof(bool));
 	int numberOfClusters = 0;
 	bool newCluster;
 	int row, col;
-	int maxRows, maxCols;
-	int L;
-	
+	neighbor_t *neighbor;
+
 	// queue
-	int queueSize;
+	int queueSize = 2 * maxCols + 2 * maxRows;
+	void **queue = calloc(queueSize, sizeof(void *));
 	int first = 0, last = 0, elements = 0;
-	void **queue;
 	#define ENQUEUE(x) *(queue + last) = x; last = last + 1 < queueSize ? last + 1 : 0; ++elements
 	#define DEQUEUE *(queue + first); first = first + 1 < queueSize ? first + 1 : 0; --elements
 
 	// IMPLEMENTATION DEPENDENT
-	cell *matrix = ICA.matrix;
+	cell *matrix = m->m;
 	cell *N, *S, *E, *W, *C;
-	L = ICA.L;
-	maxRows = L;
-	maxCols = L;
-	bool * const cellCounted = calloc((maxRows + 2) * (maxCols + 2), sizeof(bool));
-	queueSize = 4 * L;
-	queue = calloc(queueSize, sizeof(cell *));
+	getCellState = ICA_getCellState;
+	getCell = ICA_getCellByPos;
+	getNeighbor = ICA_getNeighbor;
 
 	// ALGORITHM
 	for (row = 1; row <= maxRows; ++row)
 		for (col = 1; col <= maxCols; ++col)
 		{
-			C = matrix + (L + 2) * row + col;
+			C = getCell(row, col, m);
 
-			if (C->state != 1 || *(cellCounted + (C - matrix)) == true)
+			if (getCellState(C) != 1 || *(cellCounted + (C - matrix)) == true)
 				continue;
 
 			newCluster = false;
@@ -220,27 +261,28 @@ static int countClusters(void) // 2D, closed borders
 
 				*(cellCounted + (C - matrix)) = true;
 
-				N = C - (L + 2);
-				S = C + (L + 2);
-				E = C + 1;
-				W = C - 1;
-
-				if (N->state == 1 && *(cellCounted + (N - matrix)) == false)
+				neighbor = getNeighbor(C, m);
+				N = neighbor->N;
+				S = neighbor->S;
+				E = neighbor->E;
+				W = neighbor->W;
+				
+				if (getCellState(N) == 1 && *(cellCounted + (N - matrix)) == false)
 				{
 					newCluster = true;
 					ENQUEUE(N);
 				} 
-				if (S->state == 1 && *(cellCounted + (S - matrix)) == false)
+				if (getCellState(S) == 1 && *(cellCounted + (S - matrix)) == false)
 				{
 					newCluster = true;
 					ENQUEUE(S);
 				} 
-				if (E->state == 1 && *(cellCounted + (E - matrix)) == false)
+				if (getCellState(E) == 1 && *(cellCounted + (E - matrix)) == false)
 				{
 					newCluster = true;
 					ENQUEUE(E);
 				} 
-				if (W->state == 1 && *(cellCounted + (W - matrix)) == false)
+				if (getCellState(W) == 1 && *(cellCounted + (W - matrix)) == false)
 				{
 					newCluster = true;
 					ENQUEUE(W);
