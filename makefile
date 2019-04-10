@@ -2,7 +2,7 @@ setup:
 	mkdir -p build/ bin/
 	make bin/CAexplorer
 
-bin/CAexplorer: build/*.o
+bin/CAexplorer: build/CAexplorer.o build/printTitle.o build/optionManager.o build/CAmanager.o build/ICA.o build/countCluster.o
 	gcc build/*.o -o bin/CAexplorer
 
 build/CAexplorer.o: src/CAexplorer.c src/printTitle.h src/optionManager.h
