@@ -49,6 +49,7 @@ void interpretOption(char option)
 		break;
 
 		case 'A':
+		analyse();
 		break;
 
 		case 'R':
