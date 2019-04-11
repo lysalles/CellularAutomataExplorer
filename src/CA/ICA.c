@@ -28,13 +28,13 @@ struct ICA
 // STATIC FUNCTIONS DECLARATIONS
 
 static int ICA_neighborSum(int x, int y);
-void ICA_printMatrix(void);
+static void ICA_printMatrix(void);
 static int ICA_getCellState(void *c);
 static void *ICA_getCellByPos(int row, int col, const matrix_t *m);
 static neighbor_t *ICA_getNeighbor(void *c, const matrix_t *m);
-uint64_t ICA_getCellPos(void *c, const matrix_t *m);
+static uint64_t ICA_getCellPos(void *c, const matrix_t *m);
 
-// VALUE RETURNING FUNCTIONS
+// VALUE RETURNING FUNCTIONS !! not prototypes !!
 
 float ICA_getL(void){return ICA.L;}
 float ICA_getQ(void){return ICA.q;}
@@ -133,7 +133,7 @@ void ICA_run(int32_t cycles, int32_t steps)
 
 // INFORMATION RETRIEVAL FUNCTIONS
 
-void ICA_printMatrix(void)
+static void ICA_printMatrix(void)
 {
 	putchar('\n');
 	for (int row = 0; row < ICA.L + 2; ++row)
@@ -219,7 +219,7 @@ static neighbor_t *ICA_getNeighbor(void *c, const matrix_t *m)
 	return &neighbor;
 }
 
-uint64_t ICA_getCellPos(void *c, const matrix_t *m)
+static uint64_t ICA_getCellPos(void *c, const matrix_t *m)
 {
 	return ((cell *) c) - ((cell *) m->m);
 }
