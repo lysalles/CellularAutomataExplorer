@@ -6,7 +6,7 @@
 #define ICA_TITLE "Inhomogenous Cellular Automata (ICA)"
 #define ICA_AUTHOR "Gerard Weisbuch and Dietrich Stauffer"
 
-float ICA_getL(void);
+int ICA_getL(void);
 float ICA_getQ(void);
 float ICA_getAvgState(void);
 float ICA_getAvgThres(void);

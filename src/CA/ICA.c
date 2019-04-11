@@ -36,7 +36,7 @@ static uint64_t ICA_getCellPos(void *c, const matrix_t *m);
 
 // VALUE RETURNING FUNCTIONS !! not prototypes !!
 
-float ICA_getL(void){return ICA.L;}
+int ICA_getL(void){return ICA.L;}
 float ICA_getQ(void){return ICA.q;}
 float ICA_getAvgState(void){return ICA.avgState;}
 float ICA_getAvgThres(void){return ICA.avgThres;}
