@@ -7,10 +7,10 @@ int countClusters(const matrix_t *m)
 	// IMPLEMENTATION INDEPENDENT
 	int maxRows = m->rows, maxCols = m->cols;
 
-	int (*getCellState)(void *c);
-	void *(*getCell)(int row, int col, const matrix_t *m);
-	neighbor_t *(*getNeighbor)(void *c, const matrix_t *m);
-	uint64_t (*getPos)(void *c, const matrix_t *m);
+	int (*getCellState)(void *c) = m->getCellState;
+	void *(*getCell)(int row, int col, const matrix_t *m) = m->getCell;
+	neighbor_t *(*getNeighbor)(void *c, const matrix_t *m) = m->getNeighbor;
+	uint64_t (*getPos)(void *c, const matrix_t *m) = m->getPos;
 	
 	bool * const cellLooked = calloc((maxRows + 2) * (maxCols + 2), sizeof(bool));
 	int numberOfClusters = 0;
@@ -26,12 +26,6 @@ int countClusters(const matrix_t *m)
 	int first = 0, last = 0, elements = 0;
 	#define ENQUEUE(x) *(queue + last) = x; last = last + 1 < queueSize ? last + 1 : 0; ++elements
 	#define DEQUEUE *(queue + first); first = first + 1 < queueSize ? first + 1 : 0; --elements
-
-	// IMPLEMENTATION DEPENDENT
-	getCellState = m->getCellState;
-	getCell = m->getCell;
-	getNeighbor = m->getNeighbor;
-	getPos = m->getPos;
 
 	// ALGORITHM
 	for (row = 1; row <= maxRows; ++row)
