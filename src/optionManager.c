@@ -53,6 +53,7 @@ void interpretOption(char option)
 		break;
 
 		case 'R':
+		render();
 		break;
 
 		case 'D':
