@@ -5,5 +5,6 @@
 
 void newMatrix(void);
 void startSimulation(void);
+void analyse(void);
 
 #endif
