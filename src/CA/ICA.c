@@ -175,8 +175,6 @@ void ICA_updateStats(void)
 		ICA_getCellPos
 	};
 	ICA.numberOfClusters = countClusters(&m);
-
-	ICA_printMatrix();
 }
 
 static int ICA_neighborSum(int x, int y)
