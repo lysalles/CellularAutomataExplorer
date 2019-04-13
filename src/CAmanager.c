@@ -53,7 +53,7 @@ void newMatrix(void)
 	
 	if (data_stream != NULL)
 		fclose(data_stream);
-	sprintf(data_filename, "ICA-L%d-q%d_%d_seed%u.dat", ICA_getL(), (int) ICA_getQ(), (int)(ICA_getQ() - (int) ICA_getQ()), ICA_getSeed());
+	sprintf(data_filename, "ICA-L%d-q%d_%3.3d-seed%u.dat", ICA_getL(), (int) ICA_getQ(), (int)(ICA_getQ() * 1000 - (int) (ICA_getQ() * 1000)), ICA_getSeed());
 	data_stream = fopen(data_filename, "w");
 }
 
@@ -96,7 +96,7 @@ void analyse(void)
 
 void render(void)
 {
-	sprintf(plot_filename, "ICA-L%d-q%d_%d_seed%u.plt", ICA_getL(), (int) ICA_getQ(), (int)(ICA_getQ() - (int) ICA_getQ()), ICA_getSeed());
+	sprintf(plot_filename, "ICA-L%d-q%d_%3.3d-seed%u.plt", ICA_getL(), (int) ICA_getQ(), (int)(ICA_getQ() * 1000 - (int) (ICA_getQ() * 1000)), ICA_getSeed());
 	plot_stream = fopen(plot_filename, "w");
 
 	fprintf(plot_stream, "%s\n", "set key autotitle columnhead");
@@ -106,25 +106,26 @@ void render(void)
 	fprintf(plot_stream, "%s\n", "set term pngcairo enhanced font \"Times New Roman-Bold, 12\" size (16*38),(9*38)");
 	fprintf(plot_stream, "%s\n", "set termoption dashed");
 	fprintf(plot_stream, "%s\n", "set style line 1 lc rgb '#000000' lt 1 lw 1 pt 1 pi -1 ps 1.5");
-	fprintf(plot_stream, "set title \"L=%d  q=%g  seed=%u\"\n", ICA_getL(), ICA_getQ(), ICA_getSeed());
+	fprintf(plot_stream, "set title \"L=%d  q=%g  seed=%u\"\n\n", ICA_getL(), ICA_getQ(), ICA_getSeed());
 
 	// Avg state & Avg threshold vs cycle
 	fprintf(plot_stream, "set ylabel \"Average value\"\n");
 	fprintf(plot_stream, "set xlabel\"Cycle\"\n");
 	fprintf(plot_stream, "set output \"ICA-L%d-q%d_%d_seed%u-AvgStateAvgThresVsCycle.png\"\n", ICA_getL(), (int) ICA_getQ(), (int)(ICA_getQ() - (int) ICA_getQ()), ICA_getSeed());
-	fprintf(plot_stream, "plot \"%s\" using 1:2 with lines ls 1, \"%s\" using 1:3 with lines ls 1 lt 3\n", data_filename, data_filename);
+	fprintf(plot_stream, "plot \"%s\" using 1:2 with lines ls 1, \"%s\" using 1:3 with lines ls 1 lt 3\n\n", data_filename, data_filename);
+	// Clusters vs AvgState
+	fprintf(plot_stream, "set ylabel \"Num. of Clusters\"\n");
+	fprintf(plot_stream, "set xlabel \"Average State\"\n");
+	fprintf(plot_stream, "f(x) = a*x+b\n");
+	fprintf(plot_stream, "fit f(x) \"%s\" using 2:4 via a, b\n", data_filename);
+	fprintf(plot_stream, "set output \"ICA-L%d-q%d_%d_seed%u-ClusterVsAvgState.png\"\n", ICA_getL(), (int) ICA_getQ(), (int)(ICA_getQ() - (int) ICA_getQ()), ICA_getSeed());
+	fprintf(plot_stream, "plot \"%s\" using 2:4 lc rgb '#000000', f(x) t sprintf(\"f(x) = %%.0f x + %%.0f\", a, b) lt 1 lc rgb '#888888' lw 3\n\n", data_filename);
 	// Clusters vs AvgThres
 	fprintf(plot_stream, "set ylabel \"Num. of Clusters\"\n");
 	fprintf(plot_stream, "set xlabel \"Average Threshold\"\n");
 	fprintf(plot_stream, "unset key\n");
 	fprintf(plot_stream, "set output \"ICA-L%d-q%d_%d_seed%u-ClusterVsAvgThres.png\"\n", ICA_getL(), (int) ICA_getQ(), (int)(ICA_getQ() - (int) ICA_getQ()), ICA_getSeed());
 	fprintf(plot_stream, "plot \"%s\" using 3:4 lc rgb '#000000'\n", data_filename);
-	// Clusters vs AvgState
-	fprintf(plot_stream, "set ylabel \"Num. of Clusters\"\n");
-	fprintf(plot_stream, "set xlabel \"Average State\"\n");
-	fprintf(plot_stream, "unset key\n");
-	fprintf(plot_stream, "set output \"ICA-L%d-q%d_%d_seed%u-ClusterVsAvgState.png\"\n", ICA_getL(), (int) ICA_getQ(), (int)(ICA_getQ() - (int) ICA_getQ()), ICA_getSeed());
-	fprintf(plot_stream, "plot \"%s\" using 2:4 lc rgb '#000000'\n", data_filename);
 
 	if (plot_stream != NULL)
 		fclose(plot_stream);
