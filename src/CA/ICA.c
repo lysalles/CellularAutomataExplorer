@@ -4,9 +4,9 @@
 #include <time.h>
 #include <stdbool.h>
 #include "ICA.h"
-#include "tools/countCluster.h"
+//#include "tools/countCluster.h"
 
-#define DELTAQ_PRECISION 100000
+#define DELTAQ_PRECISION 1000
 
 typedef struct cell
 {
@@ -30,9 +30,10 @@ struct ICA
 static int ICA_neighborSum(int x, int y);
 static void ICA_printMatrix(void);
 static int ICA_getCellState(void *c);
-static void *ICA_getCellByPos(int row, int col, const matrix_t *m);
-static neighbor_t *ICA_getNeighbor(void *c, const matrix_t *m);
-static uint64_t ICA_getCellPos(void *c, const matrix_t *m);
+//static void *ICA_getCellByPos(int row, int col, const matrix_t *m);
+//static neighbor_t *ICA_getNeighbor(void *c, const matrix_t *m);
+//static uint64_t ICA_getCellPos(void *c, const matrix_t *m);
+static int ICA_fastCountClusters(void);
 
 // VALUE RETURNING FUNCTIONS !! not prototypes !!
 
@@ -164,7 +165,7 @@ void ICA_updateStats(void)
 		
 	ICA.avgState = totalState / (ICA.L * ICA.L);
 	ICA.avgThres = totalThreshold / (ICA.L * ICA.L);
-	matrix_t m = (matrix_t) 
+	/*matrix_t m = (matrix_t) 
 	{
 		(void *)ICA.matrix, 
 		ICA.L, 
@@ -173,8 +174,8 @@ void ICA_updateStats(void)
 		ICA_getCellByPos, 
 		ICA_getNeighbor, 
 		ICA_getCellPos
-	};
-	ICA.numberOfClusters = countClusters(&m);
+	};*/
+	ICA.numberOfClusters = ICA_fastCountClusters();
 }
 
 static int ICA_neighborSum(int x, int y)
@@ -188,7 +189,7 @@ static int ICA_neighborSum(int x, int y)
 
 	return sum;
 }
-
+/*
 // TOOLS FOR COUNTING CLUSTER
 
 static int ICA_getCellState(void *c)
@@ -220,4 +221,83 @@ static neighbor_t *ICA_getNeighbor(void *c, const matrix_t *m)
 static uint64_t ICA_getCellPos(void *c, const matrix_t *m)
 {
 	return ((cell *) c) - ((cell *) m->m);
+}
+*/
+static int ICA_fastCountClusters(void) 
+{
+	bool *cellLooked = calloc((ICA.L + 2) * (ICA.L + 2), sizeof(bool));
+	int numberOfClusters = 0;
+	
+	cell *N, *S, *E, *W, *C;
+	bool newCluster;
+	int row, col;
+
+	// queue
+	int queueSize = 4 * ICA.L;
+	void **queue = calloc(queueSize, sizeof(void *));
+	int first = 0, last = 0, elements = 0;
+	#define ENQUEUE(x) *(queue + last) = x; last = last + 1 < queueSize ? last + 1 : 0; ++elements
+	#define DEQUEUE *(queue + first); first = first + 1 < queueSize ? first + 1 : 0; --elements
+
+	if (queue == NULL || cellLooked == NULL)
+	{
+		puts("Failed to alloc in ICAcountCluster");
+		while(getchar() != '\n');
+	}
+
+	// ALGORITHM
+	for (row = 1; row <= ICA.L; ++row)
+		for (col = 1; col <= ICA.L; ++col)
+		{
+			C = (ICA.matrix + row * (ICA.L + 2) + col);
+
+			if (C->state != 1 || *(cellLooked + (C - ICA.matrix)) == true)
+				continue;
+
+			newCluster = false;
+			*(cellLooked + (C - ICA.matrix)) = true;
+			ENQUEUE(C);
+
+			while (elements > 0)
+			{
+				C = DEQUEUE;
+
+				N = C - ICA.L - 2;
+				S = C + ICA.L + 2;
+				E = C + 1;
+				W = C - 1;
+				
+				if (N->state == 1 && *(cellLooked + (N - ICA.matrix)) == false)
+				{
+					*(cellLooked + (N - ICA.matrix)) = true;
+					newCluster = true;
+					ENQUEUE(N);
+				} 
+				if (S->state == 1 && *(cellLooked + (S - ICA.matrix)) == false)
+				{
+					*(cellLooked + (S - ICA.matrix)) = true;
+					newCluster = true;
+					ENQUEUE(S);
+				} 
+				if (E->state == 1 && *(cellLooked + (E - ICA.matrix)) == false)
+				{
+					*(cellLooked + (E - ICA.matrix)) = true;
+					newCluster = true;
+					ENQUEUE(E);
+				} 
+				if (W->state == 1 && *(cellLooked + (W - ICA.matrix)) == false)
+				{
+					*(cellLooked + (W - ICA.matrix)) = true;
+					newCluster = true;
+					ENQUEUE(W);
+				} 
+			}
+
+			if (newCluster) ++numberOfClusters;
+		}
+		
+	free(queue);
+	free(cellLooked);
+
+	return numberOfClusters;
 }
