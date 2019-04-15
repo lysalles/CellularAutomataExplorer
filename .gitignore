@@ -53,3 +53,5 @@ dkms.conf
 
 # Visual studio files
 .vscode
+data/
+bin/
