@@ -7,5 +7,6 @@ void newMatrix(void);
 void startSimulation(void);
 void analyse(void);
 void render(void);
+void runManyICA(void);
 
 #endif
