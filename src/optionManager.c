@@ -48,6 +48,10 @@ void interpretOption(char option)
 		startSimulation();
 		break;
 
+		case 'M':
+		runManyICA();
+		break;
+
 		case 'A':
 		analyse();
 		break;
