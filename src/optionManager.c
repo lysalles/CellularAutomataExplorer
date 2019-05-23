@@ -49,7 +49,7 @@ void interpretOption(char option)
 		break;
 
 		case 'M':
-		runManyICA();
+		runManySeededICA();
 		break;
 
 		case 'A':

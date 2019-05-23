@@ -1,5 +1,6 @@
 setup:
 	mkdir -p build/ bin/
+	touch src/printTitle.c
 	make bin/CAexplorer
 
 bin/CAexplorer: build/CAexplorer.o build/printTitle.o build/optionManager.o build/CAmanager.o build/ICA.o build/countCluster.o

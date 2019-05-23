@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "printTitle.h"
 #include "optionManager.h"
 
 int main(void)
 {
+	srand((unsigned int) time(NULL));
 	char option;
 
 	printTitle();

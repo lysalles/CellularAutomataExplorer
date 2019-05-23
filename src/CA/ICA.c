@@ -34,6 +34,7 @@ static int ICA_getCellState(void *c);
 //static neighbor_t *ICA_getNeighbor(void *c, const matrix_t *m);
 //static uint64_t ICA_getCellPos(void *c, const matrix_t *m);
 static int ICA_fastCountClusters(void);
+static int ICA_neighborSumMoore(int x, int y);
 
 // VALUE RETURNING FUNCTIONS !! not prototypes !!
 
@@ -53,10 +54,10 @@ void ICA_new(int L, float q)
 	float new_q;
 	cell *c;
 
+	printf("Creating new %s matrix...\n", ICA_TITLE);
+
 	free(ICA.matrix);
 	newMatrix = (cell *) calloc((L + 2) * (L + 2), sizeof(cell));
-
-	printf("Creating new %s matrix...\n", ICA_TITLE);
 
 	if (newMatrix == NULL)
 	{
@@ -65,7 +66,7 @@ void ICA_new(int L, float q)
 	}
 	else
 	{
-		newSeed = (unsigned int) time(NULL);
+		newSeed = rand();
 		srand(newSeed);
 
 		for (int row = 1; row <= L; ++row)
@@ -77,7 +78,7 @@ void ICA_new(int L, float q)
 				c->threshold = new_q;
 			}
 
-		puts("Successfully created.\n");
+		printf("Successfully created with seed=%u.\n\n",newSeed);
 	}
 	
 	ICA.matrix = newMatrix;
@@ -87,6 +88,64 @@ void ICA_new(int L, float q)
 	ICA.avgThres = 0;
 	ICA.numberOfClusters = 0;
 	ICA.seed = newSeed;
+}
+
+void ICA_newSeeded(int L, float q, unsigned int newSeed)
+{
+	cell *newMatrix;
+	float new_q;
+	cell *c;
+
+	printf("Creating new %s matrix with seed %u...\n", ICA_TITLE, newSeed);
+
+	free(ICA.matrix);
+	newMatrix = (cell *) calloc((L + 2) * (L + 2), sizeof(cell));
+
+	if (newMatrix == NULL)
+	{
+		printf("Failed to create new %s with L=%d and q=%g\n", ICA_TITLE, L, q);
+		while(getchar() != '\n');
+	}
+	else
+	{
+		srand(newSeed);
+
+		for (int row = 1; row <= L; ++row)
+			for (register int col = 1; col <= L; ++col)
+			{ 
+				c = (newMatrix + row * (L + 2) + col);
+				c->state = rand() % 2 * 2 - 1;
+				new_q = (rand() % DELTAQ_PRECISION * 2.0 / DELTAQ_PRECISION - 1.0) * q;
+				c->threshold = new_q;
+			}
+
+		printf("Successfully created with seed=%u.\n\n",newSeed);
+	}
+	
+	ICA.matrix = newMatrix;
+	ICA.L = L;
+	ICA.q = q;
+	ICA.avgState = 0;
+	ICA.avgThres = 0;
+	ICA.numberOfClusters = 0;
+	ICA.seed = newSeed;
+}
+
+void ICA_invertCell(int x, int y)
+{
+	cell * C = ICA.matrix + (y + 1) * (ICA.L + 2) + (x + 1);
+	printf("Cell (%d, %d) inverted from ", x, y);
+	printf("s=%d t=%g to ", C->state, C->threshold);
+	C->state *= -1;
+	C->threshold *= -1;
+	printf("s=%d t=%g\n", C->state, C->threshold);
+}
+
+void ICA_setSeed(unsigned int newSeed)
+{
+	ICA.seed = newSeed;
+	srand(newSeed);
+	printf("New seed set to %u.\n", ICA.seed);
 }
 
 void ICA_delete(void)
@@ -113,7 +172,7 @@ void ICA_run(int32_t cycles, int32_t steps)
 
 			cell *c = (ICA.matrix + y * (ICA.L + 2) + x);
 
-			if (ICA_neighborSum(x, y) > c->threshold)
+			if (ICA_neighborSumMoore(x, y) > c->threshold)
 			{
 				c->state = 1;
 				c->threshold += deltaQ;
@@ -189,6 +248,24 @@ static int ICA_neighborSum(int x, int y)
 
 	return sum;
 }
+
+static int ICA_neighborSumMoore(int x, int y)
+{
+	int sum = 0;
+
+	sum += (ICA.matrix + (y - 1) * ICA.L + (x))->state;
+	sum += (ICA.matrix + (y + 1) * ICA.L + (x))->state;
+	sum += (ICA.matrix + (y) * ICA.L + (x - 1))->state;
+	sum += (ICA.matrix + (y) * ICA.L + (x + 1))->state;
+
+	sum += (ICA.matrix + (y - 1) * ICA.L + (x - 1))->state;
+	sum += (ICA.matrix + (y - 1) * ICA.L + (x + 1))->state;
+	sum += (ICA.matrix + (y + 1) * ICA.L + (x - 1))->state;
+	sum += (ICA.matrix + (y + 1) * ICA.L + (x + 1))->state;
+
+	return sum;
+}
+
 /*
 // TOOLS FOR COUNTING CLUSTER
 
