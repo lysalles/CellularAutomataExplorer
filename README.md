@@ -7,3 +7,13 @@ Features should be listed below:
 1. Support for general CAs;
 2. Cluster analysis;
 3. Support for gnuplot scripts generation;
+
+To compile, run the command 
+$ make
+in a linux terminal from the main diretory.
+
+To run, type
+$ bin/CAexplorer
+
+Create chats from .plt scripts by typing
+$ gnuplot *.plt
