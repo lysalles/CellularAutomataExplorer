@@ -57,130 +57,10 @@ void newMatrix(void)
 	data_stream = fopen(data_filename, "w");
 }
 
-#define SIZE(x) ((int) (sizeof(x) / sizeof(x[0])))
-void runManyICA(void)
-{
-	int Ls[] = {500};
-	float Qs[] = {
-		0.2, 0.4, 0.6, 0.8, 1.0, // 0.2
-		1.2, 1.4, 1.6, 1.8, 2.0, 
-		2.2, 2.4, 2.6, 2.8, 3.0, 
-		3.2, 3.4, 3.6, 3.8, 4.0, 
-		4.2, 4.4, 4.6, 4.8, 5.0, 
-		5.2, 5.4, 5.6, 5.8, 6.0, 
-		6.2, 6.4, 6.6, 6.8, 7.0, 
-		7.2, 7.4, 7.6, 7.8, 8.0, 
-		8.2, 8.4, 8.6, 8.8, 9.0, 
-		9.2, 9.4, 9.6, 9.8, 10
-		};
-	int cycles = 10000;
-	int repetitions = 1;
-
-	for (int r = 0; r < repetitions; ++r)
-	{
-		for (int qi = 0; qi < SIZE(Qs); ++qi)
-		{
-			for (int Li = 0; Li < SIZE(Ls); ++Li)
-			{
-				ICA_new(Ls[Li], Qs[qi]);
-				cycle = 0;
-				
-				if (data_stream != NULL)
-					fclose(data_stream);
-				sprintf(data_filename, "ICA-L%d-q%d_%3.3d-seed%u.dat", ICA_getL(), (int) ICA_getQ(), (int)(1000 * (ICA_getQ() - (int) ICA_getQ())), ICA_getSeed());
-				data_stream = fopen(data_filename, "w");
-
-				printf("\n\nStarting simulation for q=%g L=%d\n\n", Qs[qi], Ls[Li]);
-				//fprintf(stdout, "%6s %9s %9s %9s\n", "Cycle", "AvgState", "AvgThres", "Clusters");
-				fprintf(data_stream, "%6s \"%9s\" \"%9s\" %9s\n", "Cycle", "Average State", "Average Threshold", "Clusters");
-
-				for (int i = cycle; i < cycles + cycle; ++i)
-				{
-					ICA_updateStats();
-					//fprintf(stdout, "%6d %9.4f %9.4f %9d\n", i, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
-					fprintf(data_stream, "%6d %9.4f %9.4f %9d\n", i, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
-					ICA_run(1,0);
-				}
-				cycle += cycles;
-				ICA_updateStats();
-				fprintf(stdout, "%6d %9.4f %9.4f %9d\n", cycle, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
-				fprintf(data_stream, "%6d %9.4f %9.4f %9d\n", cycle, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
-
-				render();
-			}
-		}
-	}
-}
-
-void runManySeededICA(void)
-{
-	int Ls[] = {100};
-	float Qs[] = {
-		0.1,
-		1.0,
-		2.0, 
-		3.0, 
-		4.0, 
-		5.0, 
-		6.0, 
-		7.0, 
-		8.0, 
-		9.0, 
-		10
-		};
-	int cycles = 10000;
-	int repetitions = 1;
-
-	for (int r = 0; r < repetitions; ++r)
-	{
-		for (int qi = 0; qi < SIZE(Qs); ++qi)
-		{
-			for (int Li = 0; Li < SIZE(Ls); ++Li)
-			{
-				ICA_newSeeded(Ls[Li], Qs[qi], 156501936);
-				srand((unsigned int) time(NULL));
-				int noise = 10000;
-				for(int i = 0; i < noise; ++i)
-				{
-					int x = rand() % ICA_getL();
-					int y = rand() % ICA_getL();
-					ICA_invertCell(x, y);
-				}
-				ICA_setSeed(2376222);
-				cycle = 0;
-				
-				if (data_stream != NULL)
-					fclose(data_stream);
-				sprintf(data_filename, "ICA-L%d-q%d_%3.3d-seed%u.dat", ICA_getL(), (int) ICA_getQ(), (int)(1000 * (ICA_getQ() - (int) ICA_getQ())), ICA_getSeed());
-				data_stream = fopen(data_filename, "w");
-
-				printf("\n\nStarting simulation for q=%g L=%d\n\n", Qs[qi], Ls[Li]);
-				//fprintf(stdout, "%6s %9s %9s %9s\n", "Cycle", "AvgState", "AvgThres", "Clusters");
-				fprintf(data_stream, "%6s \"%9s\" \"%9s\" %9s\n", "Cycle", "Average State", "Average Threshold", "Clusters");
-
-				for (int i = cycle; i < cycles + cycle; ++i)
-				{
-					ICA_updateStats();
-					//fprintf(stdout, "%6d %9.4f %9.4f %9d\n", i, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
-					fprintf(data_stream, "%6d %9.4f %9.4f %9d\n", i, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
-					ICA_run(1,0);
-				}
-				cycle += cycles;
-				ICA_updateStats();
-				fprintf(stdout, "%6d %9.4f %9.4f %9d\n", cycle, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
-				fprintf(data_stream, "%6d %9.4f %9.4f %9d\n", cycle, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
-
-				render();
-			}
-		}
-	}
-}
-
-
-void startSimulation(void)
+void startSimulationVonNeumann(void)
 {
 	int cycles;
-	printf("Starting simulation for %s.\n", ICA_TITLE);
+	printf("Starting simulation for %s with VonNeumann Neighborhood.\n", ICA_TITLE);
 	printf("Enter number of cycles: ");
 	scanf(" %d", &cycles);
 	while(getchar() != '\n');
@@ -193,7 +73,31 @@ void startSimulation(void)
 		ICA_updateStats();
 		fprintf(stdout, "%6d %9.4f %9.4f %9d\n", i, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
 		fprintf(data_stream, "%6d %9.4f %9.4f %9d\n", i, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
-		ICA_run(1,0);
+		ICA_runVonNeumann(1,0);
+	}
+	cycle += cycles;
+	ICA_updateStats();
+	fprintf(stdout, "%6d %9.4f %9.4f %9d\n", cycle, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
+	fprintf(data_stream, "%6d %9.4f %9.4f %9d\n", cycle, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
+}
+
+void startSimulationMoore(void)
+{
+	int cycles;
+	printf("Starting simulation for %s with Moore Neighborhood.\n", ICA_TITLE);
+	printf("Enter number of cycles: ");
+	scanf(" %d", &cycles);
+	while(getchar() != '\n');
+
+	fprintf(stdout, "%6s %9s %9s %9s\n", "Cycle", "AvgState", "AvgThres", "Clusters");
+	fprintf(data_stream, "%6s \"%9s\" \"%9s\" %9s\n", "Cycle", "Average State", "Average Threshold", "Clusters");
+
+	for (int i = cycle; i < cycles + cycle; ++i)
+	{
+		ICA_updateStats();
+		fprintf(stdout, "%6d %9.4f %9.4f %9d\n", i, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
+		fprintf(data_stream, "%6d %9.4f %9.4f %9d\n", i, ICA_getAvgState(), ICA_getAvgThres(), ICA_getNumberOfClusters());
+		ICA_runMoore(1,0);
 	}
 	cycle += cycles;
 	ICA_updateStats();
@@ -249,4 +153,14 @@ void render(void)
 
 	if (plot_stream != NULL)
 		fclose(plot_stream);
+}
+
+void drawState(void)
+{
+	ICA_printState();
+}
+
+void drawThres(void)
+{
+	ICA_printThres();
 }

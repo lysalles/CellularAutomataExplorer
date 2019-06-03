@@ -28,12 +28,13 @@ struct ICA
 // STATIC FUNCTIONS DECLARATIONS
 
 static int ICA_neighborSum(int x, int y);
-static void ICA_printMatrix(void);
 static int ICA_getCellState(void *c);
 //static void *ICA_getCellByPos(int row, int col, const matrix_t *m);
 //static neighbor_t *ICA_getNeighbor(void *c, const matrix_t *m);
 //static uint64_t ICA_getCellPos(void *c, const matrix_t *m);
 static int ICA_fastCountClusters(void);
+static int ICA_neighborSumMoore(int x, int y);
+static int ICA_neighborSumVonNeumann(int x, int y);
 static int ICA_neighborSumMoore(int x, int y);
 
 // VALUE RETURNING FUNCTIONS !! not prototypes !!
@@ -156,7 +157,7 @@ void ICA_delete(void)
 	ICA.matrix = NULL;
 }
 
-void ICA_run(int32_t cycles, int32_t steps)
+void ICA_runMoore(int32_t cycles, int32_t steps)
 {
 	int x, y;
 	float deltaQ;
@@ -191,18 +192,74 @@ void ICA_run(int32_t cycles, int32_t steps)
 	}
 }
 
+void ICA_runVonNeumann(int32_t cycles, int32_t steps)
+{
+	int x, y;
+	float deltaQ;
+
+	while (cycles > 0  || steps > 0)
+	{
+		for (;steps > 0; --steps)
+		{
+			x = rand() % ICA.L + 1;
+			y = rand() % ICA.L + 1;
+
+			deltaQ = rand() % DELTAQ_PRECISION * ICA.q / DELTAQ_PRECISION;
+
+			cell *c = (ICA.matrix + y * (ICA.L + 2) + x);
+
+			if (ICA_neighborSumVonNeumann(x, y) > c->threshold)
+			{
+				c->state = 1;
+				c->threshold += deltaQ;
+			}
+			else
+			{
+				c->state = -1;
+				c->threshold -= deltaQ;
+			}
+		}
+		if (cycles > 0 )
+		{
+			--cycles;
+			steps = ICA.L * ICA.L;
+		}
+	}
+}
+
 // INFORMATION RETRIEVAL FUNCTIONS
 
-static void ICA_printMatrix(void)
+void ICA_printState(void)
 {
 	putchar('\n');
+	puts("# Save the lines below in a file with extension .pgm");
+	printf("P2\n%d %d\n%d\n", ICA.L + 2, ICA.L + 2, 1);
 	for (int row = 0; row < ICA.L + 2; ++row)
 	{	
 		for (int col = 0; col < ICA.L + 2; ++col)
 		{
 			int state = (ICA.matrix + row * (ICA.L + 2) + col)->state;
-			putchar(state == 1 ? '+' : ' ');
+			putchar(state == 1 ? '1' : '0');
 			putchar(' ');
+		}
+		putchar('\n');
+	}		
+}
+
+void ICA_printThres(void)
+{
+	putchar('\n');
+	puts("# Save the lines below in a file with extension .pgm");
+	printf("P2\n%d %d\n%d\n", ICA.L + 2, ICA.L + 2, 255);
+	for (int row = 0; row < ICA.L + 2; ++row)
+	{
+		for (int col = 0; col < ICA.L + 2; ++col)
+		{
+			float thres = (ICA.matrix + row * (ICA.L + 2) + col)->threshold;
+			int intThres = (int) (255 * (thres + ICA.q)/(2 * ICA.q));
+			intThres = intThres > 255 ? 255 : intThres;
+			intThres = intThres < 0 ? 0 : intThres;
+			printf("%-4d", intThres);
 		}
 		
 		putchar('\n');
@@ -237,7 +294,7 @@ void ICA_updateStats(void)
 	ICA.numberOfClusters = ICA_fastCountClusters();
 }
 
-static int ICA_neighborSum(int x, int y)
+static int ICA_neighborSumVonNeumann(int x, int y)
 {
 	int sum = 0;
 

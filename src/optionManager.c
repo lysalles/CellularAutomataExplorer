@@ -30,14 +30,16 @@ void listOptions(void)
 	//puts("\tActive charts:"); chart_printActiveCharts();
 	puts("\t[D]raw matrix");
 	//puts("\tActive drawings:"); draw_printActiveDrawings();
-	puts("\t[W]rite matrix to hard drive");
+	puts("\t[W]rite matrix to hard drive (Unimplemented)");
 	//printf("Saving matrix every %d cycles and %d steps.\n");
-	puts("\t[C]reate data files.");
+	puts("\t[C]reate data files. (Unimplemented)");
 	//printf("Saving data every %d cycles and %d steps to file \"%s\".\n",)
 }
 
 void interpretOption(char option)
 {
+	char subOption;
+	
 	switch(option)
 	{
 		case 'N':
@@ -45,11 +47,24 @@ void interpretOption(char option)
 		break;
 
 		case 'S':
-		startSimulation();
-		break;
-
-		case 'M':
-		runManySeededICA();
+		do
+		{
+			printf("Which Neighborhood? (M)oore | (V)onNeumann | (C)ancel: ");
+			subOption = getchar();
+			while(getchar() != '\n');
+			if(toupper(subOption) == 'M')
+			{
+				startSimulationMoore();
+				break;
+			}
+			if(toupper(subOption) == 'V')
+			{
+				startSimulationVonNeumann();
+				break;
+			}
+			if(toupper(subOption) == 'C')
+				break;
+		} while(1);
 		break;
 
 		case 'A':
@@ -61,12 +76,32 @@ void interpretOption(char option)
 		break;
 
 		case 'D':
+		do
+		{
+			printf("Draw (S)tate or (T)hreshold | (C)ancel: ");
+			subOption = getchar();
+			while(getchar() != '\n');
+			if(toupper(subOption) == 'S')
+			{
+				drawState();
+				break;
+			}
+			if(toupper(subOption) == 'T')
+			{
+				drawThres();
+				break;
+			}
+			if(toupper(subOption) == 'C')
+				break;
+		} while(1);
 		break;
 
 		case 'W':
+		puts("Unimplemented");
 		break;
 
 		case 'C':
+		puts("Unimplemented");
 		break;
 
 		case 'Q':

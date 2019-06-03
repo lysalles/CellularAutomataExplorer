@@ -4,10 +4,11 @@
 #include <stdint.h>
 
 void newMatrix(void);
-void startSimulation(void);
+void startSimulationVonNeumann(void);
+void startSimulationMoore(void);
 void analyse(void);
 void render(void);
-void runManyICA(void);
-void runManySeededICA(void);
+void drawState(void);
+void drawThres(void);
 
 #endif

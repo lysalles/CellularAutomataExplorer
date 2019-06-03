@@ -15,6 +15,8 @@ int ICA_getNumberOfClusters(void);
 void ICA_new(int L, float q);
 void ICA_setSeed(unsigned int newSeed);
 void ICA_newSeeded(int L, float q, unsigned int newSeed);
+void ICA_printState(void);
+void ICA_printThres(void);
 /*
 ICA_invertCell:
 inverts the state and threshold of the cell at position (x,y),
@@ -22,7 +24,8 @@ where x,y is in the interval of integers [0,L).
 */
 void ICA_invertCell(int x, int y);
 void ICA_delete(void);
-void ICA_run(int32_t cycles, int32_t steps);
+void ICA_runMoore(int32_t cycles, int32_t steps);
+void ICA_runVonNeumann(int32_t cycles, int32_t steps);
 void ICA_updateStats(void);
 
 #endif
